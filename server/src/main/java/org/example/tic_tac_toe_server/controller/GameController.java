@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,7 +28,7 @@ public class GameController {
         return gameService.createGame(gameName, ipAddress);
     }
 
-    @PatchMapping("/{gameId}")
+    @PutMapping("/{gameId}")
     public GameResponse joinGame(@PathVariable Long gameId, HttpServletRequest request) {
         String ipAddress = getIpAddress(request);
         return gameService.joinGame(gameId, ipAddress);
@@ -43,8 +44,8 @@ public class GameController {
         return gameService.getGameState(gameId);
     }
 
-    @PatchMapping("/{gameId}/state/{state}")
-    public GameResponse getState(@PathVariable Long gameId, @PathVariable String state, HttpServletRequest request) {
+    @PutMapping("/{gameId}/state/{state}")
+    public GameResponse updateState(@PathVariable Long gameId, @PathVariable String state, HttpServletRequest request) {
         String ipAddress = getIpAddress(request);
         return gameService.updateGameState(gameId, state, ipAddress);
     }

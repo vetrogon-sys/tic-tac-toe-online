@@ -11,6 +11,7 @@
     <name>tic-tac-toe</name>
     <modules>
         <module>server</module>
+        <module>console-game</module>
     </modules>
 
     <properties>

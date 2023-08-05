@@ -1,6 +1,7 @@
 package org.example.tic_tac_toe_server.service;
 
 import lombok.RequiredArgsConstructor;
+import org.codehaus.plexus.util.StringUtils;
 import org.example.tic_tac_toe_server.dto.GameResponse;
 import org.example.tic_tac_toe_server.model.Game;
 import org.example.tic_tac_toe_server.repository.GameRepository;
@@ -43,8 +44,10 @@ public class GameServiceImpl implements GameService {
     public GameResponse joinGame(Long gameId, String ipAddress) {
         Game game = getGameById(gameId);
         game.setSecondPlayerIp(ipAddress);
+        game.setCurrentPlayer(getNextPlayer(game.getState()));
         return new GameResponse(gameRepository.save(game));
     }
+
 
     @Override
     public List<GameResponse> getAvailableGames() {
@@ -75,12 +78,26 @@ public class GameServiceImpl implements GameService {
         }
 
         game.setState(updatedState);
-        return new GameResponse(gameRepository.save(game));
+        Game saved = gameRepository.save(game);
+        saved.setCurrentPlayer(saved.getState());
+        return new GameResponse(saved);
     }
 
     @Override
     public GameResponse getGameState(Long gameId) {
-        return new GameResponse(getGameById(gameId));
+        Game gameById = getGameById(gameId);
+        gameById.setCurrentPlayer(getNextPlayer(gameById.getState()));
+        return new GameResponse(gameById);
+    }
+
+    private String getNextPlayer(String state) {
+        if (state.chars().filter(ch -> ch == '-').count() > 0) {
+            long zeroCount = state.chars().filter(ch -> ch == '0').count();
+            long crossCount = state.chars().filter(ch -> ch == 'x').count();
+            return zeroCount == crossCount ? "x" : "0";
+        } else {
+            return "x";
+        }
     }
 
     @Override
