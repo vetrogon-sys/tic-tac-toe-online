@@ -2,8 +2,7 @@ package org.example.tic_tac_toe.game;
 
 public class Game {
 
-    public void start() {
+    public static void start(Void unused) {
 
     }
-
 }
