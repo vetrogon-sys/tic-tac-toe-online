@@ -1,9 +1,11 @@
 package org.example.tic_tac_toe_server.service;
 
 import lombok.RequiredArgsConstructor;
+import org.codehaus.plexus.util.StringUtils;
 import org.example.tic_tac_toe_server.dto.GameResponse;
 import org.example.tic_tac_toe_server.model.Game;
 import org.example.tic_tac_toe_server.repository.GameRepository;
+import org.example.tic_tac_toe_server.rxception.UnexpectedStateChangeException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -43,8 +45,10 @@ public class GameServiceImpl implements GameService {
     public GameResponse joinGame(Long gameId, String ipAddress) {
         Game game = getGameById(gameId);
         game.setSecondPlayerIp(ipAddress);
+        game.setCurrentPlayer(getNextPlayer(game.getState()));
         return new GameResponse(gameRepository.save(game));
     }
+
 
     @Override
     public List<GameResponse> getAvailableGames() {
@@ -57,6 +61,9 @@ public class GameServiceImpl implements GameService {
     public GameResponse updateGameState(Long gameId, String state, String ipAddress) {
         Game game = getGameById(gameId);
         String player = ipAddress.equals(game.getHostIp()) ? "x" : "0";
+        if (!isValidState(state, game.getState(), player)) {
+            throw new UnexpectedStateChangeException("Nice try ;)");
+        }
         String opponent = "x".equals(player) ? "0" : "x";
         String validationState = state
               .replaceAll(player, "1")
@@ -75,17 +82,47 @@ public class GameServiceImpl implements GameService {
         }
 
         game.setState(updatedState);
-        return new GameResponse(gameRepository.save(game));
+        Game saved = gameRepository.save(game);
+        saved.setCurrentPlayer(getNextPlayer(saved.getState()));
+        return new GameResponse(saved);
+    }
+
+    private boolean isValidState(String state, String oldState, String player) {
+        char[] stateArray = state.toCharArray();
+        char[] oldStateAarray = oldState.toCharArray();
+        for (int i = 0; i < stateArray.length; i++) {
+            if (stateArray[i] != oldStateAarray[i] && (oldStateAarray[i] != '-')) {
+                    return false;
+            }
+        }
+        return true;
     }
 
     @Override
     public GameResponse getGameState(Long gameId) {
-        return new GameResponse(getGameById(gameId));
+        Game gameById = getGameById(gameId);
+        gameById.setCurrentPlayer(getNextPlayer(gameById.getState()));
+        return new GameResponse(gameById);
+    }
+
+    private String getNextPlayer(String state) {
+        if (state.chars().filter(ch -> ch == '-').count() > 0) {
+            long zeroCount = state.chars().filter(ch -> ch == '0').count();
+            long crossCount = state.chars().filter(ch -> ch == 'x').count();
+            return zeroCount == crossCount ? "x" : "0";
+        } else {
+            return "x";
+        }
     }
 
     @Override
     public void removeGame(Long id) {
         gameRepository.deleteById(id);
+    }
+
+    @Override
+    public void removeAllByHost(String ipAddress) {
+        gameRepository.deleteByHostIp(ipAddress);
     }
 
     private Game getGameById(Long gameId) {
