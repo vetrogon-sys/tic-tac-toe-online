@@ -3,20 +3,22 @@ package org.example.tic_tac_toe_game.game.web.util;
 import lombok.SneakyThrows;
 import org.codehaus.plexus.util.StringUtils;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Properties;
 import java.util.function.Supplier;
 
 public final class GameServiceWebUtil {
 
-    private static final String SERVER_DOMAIN = "localhost:8080";
-    private static final String SERVER_ORIGIN = "http://%s/games".formatted(SERVER_DOMAIN);
+    private static final String SERVER_ORIGIN = getDomain();
     public static final String ACCEPT_HEADER = "accept";
     public static final String CONTENT_TYPE_JSON = "application/json";
-
-    private GameServiceWebUtil() {}
 
     @SneakyThrows
     public static <T> T get(String path, Class<T> responseClass) {
@@ -50,11 +52,7 @@ public final class GameServiceWebUtil {
               .PUT(HttpRequest.BodyPublishers.noBody())
               .build();
 
-        HttpResponse<Supplier<T>> response = client.send(request, new JsonBodyHandler<>(responseClass));
-        if (response.statusCode() != 200) {
-            throw new RuntimeException("Wrong request");
-        }
-        return response.body().get();
+        return client.send(request, new JsonBodyHandler<>(responseClass)).body().get();
     }
 
     @SneakyThrows
@@ -67,6 +65,17 @@ public final class GameServiceWebUtil {
               .build();
 
         client.send(request, new JsonBodyHandler<>(Void.class));
+    }
+
+    private static String getDomain() {
+        String origin = "http://%s/games".formatted("localhost:0000");
+        try (InputStream input = GameServiceWebUtil.class.getClassLoader().getResourceAsStream("server-config.properties")) {
+            Properties prop = new Properties();
+            prop.load(input);
+            origin = "http://%s/games".formatted(prop.getProperty("server.domain"));
+        } catch (IOException ignore) {
+        }
+        return origin;
     }
 
 }

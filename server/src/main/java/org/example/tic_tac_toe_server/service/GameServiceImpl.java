@@ -5,6 +5,7 @@ import org.codehaus.plexus.util.StringUtils;
 import org.example.tic_tac_toe_server.dto.GameResponse;
 import org.example.tic_tac_toe_server.model.Game;
 import org.example.tic_tac_toe_server.repository.GameRepository;
+import org.example.tic_tac_toe_server.rxception.UnexpectedStateChangeException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -60,6 +61,9 @@ public class GameServiceImpl implements GameService {
     public GameResponse updateGameState(Long gameId, String state, String ipAddress) {
         Game game = getGameById(gameId);
         String player = ipAddress.equals(game.getHostIp()) ? "x" : "0";
+        if (!isValidState(state, game.getState(), player)) {
+            throw new UnexpectedStateChangeException("Nice try ;)");
+        }
         String opponent = "x".equals(player) ? "0" : "x";
         String validationState = state
               .replaceAll(player, "1")
@@ -79,8 +83,19 @@ public class GameServiceImpl implements GameService {
 
         game.setState(updatedState);
         Game saved = gameRepository.save(game);
-        saved.setCurrentPlayer(saved.getState());
+        saved.setCurrentPlayer(getNextPlayer(saved.getState()));
         return new GameResponse(saved);
+    }
+
+    private boolean isValidState(String state, String oldState, String player) {
+        char[] stateArray = state.toCharArray();
+        char[] oldStateAarray = oldState.toCharArray();
+        for (int i = 0; i < stateArray.length; i++) {
+            if (stateArray[i] != oldStateAarray[i] && (oldStateAarray[i] != '-')) {
+                    return false;
+            }
+        }
+        return true;
     }
 
     @Override
@@ -103,6 +118,11 @@ public class GameServiceImpl implements GameService {
     @Override
     public void removeGame(Long id) {
         gameRepository.deleteById(id);
+    }
+
+    @Override
+    public void removeAllByHost(String ipAddress) {
+        gameRepository.deleteByHostIp(ipAddress);
     }
 
     private Game getGameById(Long gameId) {

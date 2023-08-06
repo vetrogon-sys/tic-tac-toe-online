@@ -18,4 +18,5 @@ public interface GameService {
 
     void removeGame(Long id);
 
+    void removeAllByHost(String ipAddress);
 }

@@ -3,8 +3,11 @@ package org.example.tic_tac_toe_server.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.example.tic_tac_toe_server.dto.GameResponse;
+import org.example.tic_tac_toe_server.rxception.UnexpectedStateChangeException;
 import org.example.tic_tac_toe_server.service.GameService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -53,6 +56,19 @@ public class GameController {
     @DeleteMapping("/{gameId}")
     public void deleteGame(@PathVariable Long gameId) {
         gameService.removeGame(gameId);
+    }
+
+    @DeleteMapping()
+    public void deleteAll(HttpServletRequest request) {
+        String ipAddress = getIpAddress(request);
+        gameService.removeAllByHost(ipAddress);
+    }
+
+    @ExceptionHandler({UnexpectedStateChangeException.class })
+    public ResponseEntity<String> handleException(UnexpectedStateChangeException exception) {
+        return ResponseEntity
+              .status(401)
+              .body(exception.getMessage());
     }
 
     private static String getIpAddress(HttpServletRequest request) {

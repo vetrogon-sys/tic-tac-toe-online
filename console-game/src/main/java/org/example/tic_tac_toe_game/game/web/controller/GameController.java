@@ -40,4 +40,7 @@ public class GameController {
         GameServiceWebUtil.delete("/%d".formatted(gameId));
     }
 
+    public void deleteAll() {
+        GameServiceWebUtil.delete("");
+    }
 }
